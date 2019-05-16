@@ -136,15 +136,15 @@ func TestProblemDetailsError(t *testing.T) {
 		{
 			name: "404_title",
 			fields: fields{
-				Status:   404,
-				Title:    "Not found",
+				Status: 404,
+				Title:  "Not found",
 			},
 			want: "Not found",
 		},
 		{
 			name: "404_status",
 			fields: fields{
-				Status:   404,
+				Status: 404,
 			},
 			want: "Status 404",
 		},
