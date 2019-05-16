@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"log"
 	"net/http"
 )
 
@@ -79,12 +78,22 @@ func NewHTTP(statusCode int) *ProblemDetails {
 	return New(statusCode, "about:blank", "", "", "")
 }
 
-// ServeHTTP will output the problem details result
-func (p *ProblemDetails) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Todo: add json/xml switch
+// ServeJSON will output Problem Details json to the response writer
+func (p *ProblemDetails) ServeJSON(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(p.Status)
 	if err := json.NewEncoder(w).Encode(p); err != nil {
-		log.Println(err)
+		return err
 	}
+	return nil
+}
+
+// ServeXML will output Problem Details xml to the response writer
+func (p *ProblemDetails) ServeXML(w http.ResponseWriter, r *http.Request) error {
+	w.Header().Set("Content-Type", "application/problem+xml")
+	w.WriteHeader(p.Status)
+	if err := xml.NewEncoder(w).Encode(p); err != nil {
+		return err
+	}
+	return nil
 }

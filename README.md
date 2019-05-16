@@ -71,3 +71,15 @@ This will generate a `ProblemDetails` struct that marshals as follows:
     <instance>https://api.example.net/objects/1234</instance>
 </problem>
 ```
+
+## Http helpers
+
+For ease of use there are two output handlers available. `ProblemDetails.ServeJSON` for JSON and `ProblemDetails.ServeXML` for XML.
+
+A shorthand for generating a 404 statuscode in Problem Details JSON to the ResponseWriter you can:
+
+```go
+problemdetails.NewHTTP(http.StatusNotFound).ServeJSON(w, r)
+```
+
+ 

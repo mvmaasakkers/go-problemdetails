@@ -3,6 +3,8 @@ package problemdetails
 import (
 	"encoding/json"
 	"encoding/xml"
+	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"testing"
 )
@@ -263,6 +265,152 @@ func TestProblemDetailsError(t *testing.T) {
 			}
 			if got := pd.Error(); got != tt.want {
 				t.Errorf("ProblemDetails.Error() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestProblemDetailsServeJSON(t *testing.T) {
+
+	tests := []struct {
+		name     string
+		args     *ProblemDetails
+		wantXML  string
+		wantJSON string
+	}{
+		{
+			name: "http_400_blank",
+			args: &ProblemDetails{
+				Type:     "about:blank",
+				Title:    "Bad Request",
+				Status:   400,
+				Detail:   "",
+				Instance: "",
+			},
+			wantXML:  `<problem xmlns="urn:ietf:rfc:7807"><type>about:blank</type><title>Bad Request</title><status>400</status></problem>`,
+			wantJSON: `{"type":"about:blank","title":"Bad Request","status":400}`,
+		},
+		{
+			name: "http_type_title",
+			args: &ProblemDetails{
+				Type:     "https://example.net/problem/issue",
+				Title:    "Issue title",
+				Status:   0,
+				Detail:   "",
+				Instance: "",
+			},
+			wantXML:  `<problem xmlns="urn:ietf:rfc:7807"><type>https://example.net/problem/issue</type><title>Issue title</title></problem>`,
+			wantJSON: `{"type":"https://example.net/problem/issue","title":"Issue title"}`,
+		},
+		{
+			name: "http_404",
+			args: &ProblemDetails{
+				Type:     "https://example.net/problem/issue",
+				Title:    "Issue title",
+				Status:   404,
+				Detail:   "Object with id was not found, another id should be given.",
+				Instance: "https://api.example.net/objects/1234",
+			},
+			wantXML:  `<problem xmlns="urn:ietf:rfc:7807"><type>https://example.net/problem/issue</type><title>Issue title</title><status>404</status><detail>Object with id was not found, another id should be given.</detail><instance>https://api.example.net/objects/1234</instance></problem>`,
+			wantJSON: `{"type":"https://example.net/problem/issue","title":"Issue title","status":404,"detail":"Object with id was not found, another id should be given.","instance":"https://api.example.net/objects/1234"}`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, err := http.NewRequest("GET", "/", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			rr := httptest.NewRecorder()
+
+			if err := tt.args.ServeJSON(rr, req); err != nil {
+				t.Errorf("ProblemDetails.ServeJSON() = %v, want nil", err)
+				t.FailNow()
+			}
+
+			pd := &ProblemDetails{}
+
+			if err := json.NewDecoder(rr.Body).Decode(pd); err != nil {
+				t.Errorf("json got error %v", err)
+				t.FailNow()
+			}
+			if !reflect.DeepEqual(pd, tt.args) {
+				t.Errorf("json got %v, want %v", pd, tt.args)
+			}
+		})
+	}
+}
+
+func TestProblemDetailsServeXML(t *testing.T) {
+	tests := []struct {
+		name     string
+		args     *ProblemDetails
+		wantXML  string
+		wantJSON string
+	}{
+		{
+			name: "http_400_blank",
+			args: &ProblemDetails{
+				Type:     "about:blank",
+				Title:    "Bad Request",
+				Status:   400,
+				Detail:   "",
+				Instance: "",
+			},
+			wantXML:  `<problem xmlns="urn:ietf:rfc:7807"><type>about:blank</type><title>Bad Request</title><status>400</status></problem>`,
+			wantJSON: `{"type":"about:blank","title":"Bad Request","status":400}`,
+		},
+		{
+			name: "http_type_title",
+			args: &ProblemDetails{
+				Type:     "https://example.net/problem/issue",
+				Title:    "Issue title",
+				Status:   0,
+				Detail:   "",
+				Instance: "",
+			},
+			wantXML:  `<problem xmlns="urn:ietf:rfc:7807"><type>https://example.net/problem/issue</type><title>Issue title</title></problem>`,
+			wantJSON: `{"type":"https://example.net/problem/issue","title":"Issue title"}`,
+		},
+		{
+			name: "http_404",
+			args: &ProblemDetails{
+				Type:     "https://example.net/problem/issue",
+				Title:    "Issue title",
+				Status:   404,
+				Detail:   "Object with id was not found, another id should be given.",
+				Instance: "https://api.example.net/objects/1234",
+			},
+			wantXML:  `<problem xmlns="urn:ietf:rfc:7807"><type>https://example.net/problem/issue</type><title>Issue title</title><status>404</status><detail>Object with id was not found, another id should be given.</detail><instance>https://api.example.net/objects/1234</instance></problem>`,
+			wantJSON: `{"type":"https://example.net/problem/issue","title":"Issue title","status":404,"detail":"Object with id was not found, another id should be given.","instance":"https://api.example.net/objects/1234"}`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req, err := http.NewRequest("GET", "/", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			rr := httptest.NewRecorder()
+			if err := tt.args.ServeXML(rr, req); err != nil {
+				t.Errorf("ProblemDetails.ServeXML() = %v, want nil", err)
+				t.FailNow()
+			}
+
+			pd := &ProblemDetails{}
+			if err := xml.NewDecoder(rr.Body).Decode(pd); err != nil {
+				t.Errorf("xml got error %v", err)
+				t.FailNow()
+			}
+			// Can't use deepequal because of XMLName
+			if pd.Status != tt.args.Status ||
+				pd.Detail != tt.args.Detail ||
+				pd.Title != tt.args.Title ||
+				pd.Instance != tt.args.Instance ||
+				pd.Type != tt.args.Type {
+				t.Errorf("xml got %v, want %v", pd, tt.args)
 			}
 		})
 	}
