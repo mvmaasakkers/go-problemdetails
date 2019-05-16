@@ -1,8 +1,10 @@
 package problemdetails
 
 import (
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -75,4 +77,14 @@ func New(statusCode int, problemType, title, detail, instance string) *ProblemDe
 // NewHTTP creates a new ProblemDetails error based just the HTTP Status Code
 func NewHTTP(statusCode int) *ProblemDetails {
 	return New(statusCode, "about:blank", "", "", "")
+}
+
+// ServeHTTP will output the problem details result
+func (p *ProblemDetails) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Todo: add json/xml switch
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(p.Status)
+	if err := json.NewEncoder(w).Encode(p); err != nil {
+		log.Println(err)
+	}
 }
