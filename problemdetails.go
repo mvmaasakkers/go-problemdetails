@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net/http"
-	"net/url"
 )
 
 // ProblemDetails is the struct definition of a problem details object
@@ -54,16 +53,6 @@ func New(statusCode int, problemType, title, detail, instance string) *ProblemDe
 	// "about:blank".
 	if problemType == "" {
 		problemType = "about:blank"
-	}
-
-	// The problem type must be a valid URI
-	if _, err := url.Parse(problemType); err != nil {
-		problemType = "about:blank"
-	}
-
-	// When the instance member is present it must be a valid URI
-	if _, err := url.Parse(instance); err != nil && instance != "" {
-		instance = ""
 	}
 
 	// When "about:blank" is used, the title SHOULD be the same as the
