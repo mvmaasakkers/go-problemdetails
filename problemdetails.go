@@ -75,7 +75,7 @@ func New(statusCode int, problemType, title, detail, instance string) *ProblemDe
 
 // NewHTTP creates a new ProblemDetails error based just the HTTP Status Code
 func NewHTTP(statusCode int) *ProblemDetails {
-	return New(statusCode, "about:blank", "", "", "")
+	return New(statusCode, "", "", "", "")
 }
 
 // ServeJSON will output Problem Details json to the response writer
