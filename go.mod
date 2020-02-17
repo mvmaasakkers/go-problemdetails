@@ -1,3 +1,3 @@
 module github.com/mvmaasakkers/go-problemdetails
 
-go 1.12
+go 1.13
